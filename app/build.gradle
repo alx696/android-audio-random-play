@@ -1,0 +1,82 @@
+plugins {
+    id 'com.android.application'
+    id 'com.google.protobuf' version '0.9.1'
+}
+
+android {
+    namespace 'red.lilu.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "red.lilu.app"
+        minSdk 29
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.10.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+
+    implementation 'io.grpc:grpc-protobuf-lite:1.57.2'
+    compileOnly 'org.apache.tomcat:annotations-api:6.0.53' // necessary for Java 9+
+    implementation "androidx.datastore:datastore:1.0.0"
+    implementation "androidx.datastore:datastore-rxjava3:1.0.0"
+
+    implementation "androidx.media3:media3-exoplayer:1.2.0"
+
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+    implementation 'joda-time:joda-time:2.12.1'
+    // 6.0版本的乐视电视及小米电视都会报错:
+    // java.lang.NoSuchMethodError: No virtual method toPath()Ljava/nio/file/Path
+    // 使用老版2.5兼容老旧系统, FileUtils.deleteDirectory() 和 FileUtils.copyFileToDirectory() 都能工作 !
+    implementation 'commons-io:commons-io:2.5'
+    // 老版系统中提供 java9.util.concurrent 支持
+    implementation 'net.sourceforge.streamsupport:android-retrofuture:1.7.3'
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.21.7"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.57.2'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java { option 'lite' }
+            }
+            task.plugins {
+                grpc { option 'lite' }
+            }
+        }
+    }
+}

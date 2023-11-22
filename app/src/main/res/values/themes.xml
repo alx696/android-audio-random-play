@@ -1,0 +1,17 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.My" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- 状态栏背景颜色 -->
+        <item name="colorPrimaryDark">#000000</item>
+        <!-- 应用栏图标颜色(比如菜单图标, MaterialToolbar样式单独定义的除外) -->
+        <item name="colorControlNormal">#eeeeee</item>
+        <!-- 控件主要颜色(比如按钮背景颜色) -->
+        <item name="colorPrimary">#7cb342</item>
+        <!-- 控件强调颜色(比如Snackbar按钮颜色) -->
+        <item name="colorPrimaryInverse">#7cb342</item>
+        <!-- 控件反转颜色(比如按钮文字颜色) -->
+        <item name="colorOnPrimary">#eeeeee</item>
+        <!-- 开关按钮和浮动按钮底色 -->
+        <item name="colorPrimaryContainer">#666666</item>
+    </style>
+</resources>

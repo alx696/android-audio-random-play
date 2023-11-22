@@ -1,0 +1,25 @@
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <!-- app:buttonTint 修正图标变换后颜色不对问题 -->
+    <CheckBox
+        android:id="@+id/check"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:button="@drawable/sl_check"
+        android:padding="8dp"
+        app:buttonTint="?attr/colorControlNormal" />
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="音频.mp3" />
+
+</androidx.appcompat.widget.LinearLayoutCompat>
