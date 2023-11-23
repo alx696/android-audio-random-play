@@ -7,9 +7,12 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.os.HandlerCompat;
@@ -55,6 +58,7 @@ public class ActivityMain extends AppCompatActivity {
     private String ruleText = "";
     private Intent dataIntent;
     private ValueAnimator valueAnimator;
+    private int screenBright;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,7 +114,7 @@ public class ActivityMain extends AppCompatActivity {
                         return true;
                     } else if (msg.what == 3) {
                         updateDnsConf();
-                        handler.sendEmptyMessageDelayed(3, 300000); // 5分钟后再次执行
+                        handler.sendEmptyMessageDelayed(3, 120000); // 2分钟后再次执行
 
                         return true;
                     } else if (msg.what == 4) {
@@ -131,6 +135,8 @@ public class ActivityMain extends AppCompatActivity {
         });
         b.buttonBegin.setOnClickListener(v -> {
             if (timer != null) {
+                fileLog("手动停止");
+                player.pause();
                 timer.cancel();
                 timer = null;
                 b.textRule.setText("");
@@ -139,6 +145,7 @@ public class ActivityMain extends AppCompatActivity {
                 return;
             }
 
+            fileLog("手动开始");
             b.buttonBegin.setText("停止");
             b.buttonScreenProtect.setEnabled(true);
             reset();
@@ -273,72 +280,105 @@ public class ActivityMain extends AppCompatActivity {
         if (!TextUtils.isEmpty(ruleText)) {
             try {
                 String[] textArray = ruleText.split(",");
-                if (textArray.length >= 5) {
+                if (textArray.length >= 4) {
                     int hourBegin = Integer.parseInt(textArray[0]);
                     int hourEnd = Integer.parseInt(textArray[1]);
-                    int hourCount = Integer.parseInt(textArray[2]);
-                    int playSecondsMin = Integer.parseInt(textArray[3]);
-                    int playSecondsMax = Integer.parseInt(textArray[4]);
+                    int hourCount = hourEnd - hourBegin + 1;
+                    int playSecondsMin = Integer.parseInt(textArray[2]);
+                    int playSecondsMax = Integer.parseInt(textArray[3]);
                     ArrayList<Integer> hourList = new ArrayList<>();
                     for (int x = 0; x < hourCount; x++) {
-                        int i = random.nextInt(hourEnd - hourBegin + 1) + hourBegin;
+                        int i = random.nextInt(hourCount) + hourBegin;
                         while (hourList.contains(i)) {
-                            i = random.nextInt(hourEnd - hourBegin + 1) + hourBegin;
+                            i = random.nextInt(hourCount) + hourBegin;
                         }
                         hourList.add(i);
                     }
                     Lists.sort(hourList, new OrderingHour());
-                    Log.d(T, "小时" + application.getGson().toJson(hourList));
                     for (Integer hour : hourList) {
-                        String text = String.format("%s:0", hour);
-                        DateTime playDateTime = LocalTime.parse(text, timeFormatter)
+                        DateTime playDateTime1 = LocalTime.parse(String.format("%s:0", hour), timeFormatter)
                                 .plusMinutes(
-                                        random.nextInt(50)
+                                        random.nextInt(25)
                                 )
                                 .toDateTimeToday();
-                        Log.d(T, "播放时间" + playDateTime);
-                        DateTime pauseDateTime = playDateTime.plusSeconds(
+                        DateTime playDateTime2 = LocalTime.parse(String.format("%s:30", hour), timeFormatter)
+                                .plusMinutes(
+                                        random.nextInt(25)
+                                )
+                                .toDateTimeToday();
+                        DateTime pauseDateTime1 = playDateTime1.plusSeconds(
                                 random.nextInt(playSecondsMax - playSecondsMin + 1) + playSecondsMin
                         );
-                        Log.d(T, "暂停时间" + pauseDateTime);
+                        DateTime pauseDateTime2 = playDateTime2.plusSeconds(
+                                random.nextInt(playSecondsMax - playSecondsMin + 1) + playSecondsMin
+                        );
 
                         // 记录规则
                         stringBuilder
                                 .append(
-                                        playDateTime.toString("HH:mm:ss")
+                                        playDateTime1.toString("HH:mm:ss")
                                 )
                                 .append("播,")
                                 .append(
-                                        pauseDateTime.toString("HH:mm:ss")
+                                        pauseDateTime1.toString("HH:mm:ss")
+                                )
+                                .append(";")
+                                .append(
+                                        playDateTime2.toString("HH:mm:ss")
+                                )
+                                .append("播,")
+                                .append(
+                                        pauseDateTime2.toString("HH:mm:ss")
                                 )
                                 .append("停\n");
 
-                        // 已经过时的不安排任务
-                        if (pauseDateTime.isBefore(DateTime.now())) {
-                            continue;
+                        // 安排任务
+                        if (pauseDateTime1.isAfter(DateTime.now())) {
+                            // 播放
+                            timer.schedule(
+                                    new TimerTask() {
+                                        @Override
+                                        public void run() {
+                                            handler.sendEmptyMessage(1);
+                                        }
+                                    },
+                                    playDateTime1.toDate()
+                            );
+
+                            // 暂停
+                            timer.schedule(
+                                    new TimerTask() {
+                                        @Override
+                                        public void run() {
+                                            handler.sendEmptyMessage(2);
+                                        }
+                                    },
+                                    pauseDateTime1.toDate()
+                            );
                         }
+                        if (pauseDateTime2.isAfter(DateTime.now())) {
+                            // 播放
+                            timer.schedule(
+                                    new TimerTask() {
+                                        @Override
+                                        public void run() {
+                                            handler.sendEmptyMessage(1);
+                                        }
+                                    },
+                                    playDateTime2.toDate()
+                            );
 
-                        // 播放
-                        timer.schedule(
-                                new TimerTask() {
-                                    @Override
-                                    public void run() {
-                                        handler.sendEmptyMessage(1);
-                                    }
-                                },
-                                playDateTime.toDate()
-                        );
-
-                        // 暂停(播放1分钟后)
-                        timer.schedule(
-                                new TimerTask() {
-                                    @Override
-                                    public void run() {
-                                        handler.sendEmptyMessage(2);
-                                    }
-                                },
-                                pauseDateTime.toDate()
-                        );
+                            // 暂停
+                            timer.schedule(
+                                    new TimerTask() {
+                                        @Override
+                                        public void run() {
+                                            handler.sendEmptyMessage(2);
+                                        }
+                                    },
+                                    pauseDateTime2.toDate()
+                            );
+                        }
                     }
                 } else {
                     stringBuilder.append("规则无效:")
@@ -435,6 +475,35 @@ public class ActivityMain extends AppCompatActivity {
         b.textAudio.setText(
                 String.join(",", nameList)
         );
+        b.buttonBegin.setEnabled(
+                nameList.size() > 0
+        );
+    }
+
+    /**
+     * 获取屏幕亮度
+     *
+     * @return 0-255
+     */
+    private int getScreenBright() {
+        int v = 50;
+        return Settings.System.getInt(
+                getContentResolver(),
+                Settings.System.SCREEN_BRIGHTNESS,
+                v
+        );
+    }
+
+    /**
+     * 设置屏幕亮度
+     *
+     * @param v 0-255
+     */
+    private void setScreenBright(int v) {
+        Window window = getWindow();
+        WindowManager.LayoutParams attributes = window.getAttributes();
+        attributes.screenBrightness = v / 255f;
+        window.setAttributes(attributes);
     }
 
     /**
@@ -444,6 +513,8 @@ public class ActivityMain extends AppCompatActivity {
         hideSystemUI();
         b.textScreenProtect.setVisibility(View.VISIBLE);
         valueAnimator.start();
+        screenBright = getScreenBright();
+        setScreenBright(10);
     }
 
     /**
@@ -453,6 +524,7 @@ public class ActivityMain extends AppCompatActivity {
         showSystemUI();
         valueAnimator.cancel();
         b.textScreenProtect.setVisibility(View.GONE);
+        setScreenBright(screenBright);
     }
 
 }
