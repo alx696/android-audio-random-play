@@ -280,12 +280,13 @@ public class ActivityMain extends AppCompatActivity {
         if (!TextUtils.isEmpty(ruleText)) {
             try {
                 String[] textArray = ruleText.split(",");
-                if (textArray.length >= 4) {
+                if (textArray.length >= 5) {
                     int hourBegin = Integer.parseInt(textArray[0]);
                     int hourEnd = Integer.parseInt(textArray[1]);
                     int hourCount = hourEnd - hourBegin + 1;
-                    int playSecondsMin = Integer.parseInt(textArray[2]);
-                    int playSecondsMax = Integer.parseInt(textArray[3]);
+                    int minuteMax = Integer.parseInt(textArray[2]);
+                    int playSecondsMin = Integer.parseInt(textArray[3]);
+                    int playSecondsMax = Integer.parseInt(textArray[4]);
                     ArrayList<Integer> hourList = new ArrayList<>();
                     for (int x = 0; x < hourCount; x++) {
                         int i = random.nextInt(hourCount) + hourBegin;
@@ -298,12 +299,12 @@ public class ActivityMain extends AppCompatActivity {
                     for (Integer hour : hourList) {
                         DateTime playDateTime1 = LocalTime.parse(String.format("%s:0", hour), timeFormatter)
                                 .plusMinutes(
-                                        random.nextInt(25)
+                                        random.nextInt(minuteMax) + 1
                                 )
                                 .toDateTimeToday();
                         DateTime playDateTime2 = LocalTime.parse(String.format("%s:30", hour), timeFormatter)
                                 .plusMinutes(
-                                        random.nextInt(25)
+                                        random.nextInt(minuteMax) + 1
                                 )
                                 .toDateTimeToday();
                         DateTime pauseDateTime1 = playDateTime1.plusSeconds(
