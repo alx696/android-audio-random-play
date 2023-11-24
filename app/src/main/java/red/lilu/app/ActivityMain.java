@@ -97,7 +97,7 @@ public class ActivityMain extends AppCompatActivity {
                     if (msg.what == 1) {
                         Log.i(T, "收到播放指令");
 
-                        if (TextUtils.isEmpty(ruleText)) {
+                        if (ruleText.startsWith("0")) {
                             Log.i(T, "DNS设置关闭, 暂不播放");
                             return true;
                         }
@@ -277,121 +277,117 @@ public class ActivityMain extends AppCompatActivity {
         );
 
         // 按照规则生成随机任务
-        if (!TextUtils.isEmpty(ruleText)) {
-            try {
-                String[] textArray = ruleText.split(",");
-                if (textArray.length >= 5) {
-                    int hourBegin = Integer.parseInt(textArray[0]);
-                    int hourEnd = Integer.parseInt(textArray[1]);
-                    int hourCount = hourEnd - hourBegin + 1;
-                    int minuteMax = Integer.parseInt(textArray[2]);
-                    int playSecondsMin = Integer.parseInt(textArray[3]);
-                    int playSecondsMax = Integer.parseInt(textArray[4]);
-                    ArrayList<Integer> hourList = new ArrayList<>();
-                    for (int x = 0; x < hourCount; x++) {
-                        int i = random.nextInt(hourCount) + hourBegin;
-                        while (hourList.contains(i)) {
-                            i = random.nextInt(hourCount) + hourBegin;
-                        }
-                        hourList.add(i);
+        try {
+            String[] textArray = ruleText.split(",");
+            if (textArray.length >= 6) {
+                int hourBegin = Integer.parseInt(textArray[1]);
+                int hourEnd = Integer.parseInt(textArray[2]);
+                int hourCount = hourEnd - hourBegin + 1;
+                int minuteMax = Integer.parseInt(textArray[3]);
+                int playSecondsMin = Integer.parseInt(textArray[4]);
+                int playSecondsMax = Integer.parseInt(textArray[5]);
+                ArrayList<Integer> hourList = new ArrayList<>();
+                for (int x = 0; x < hourCount; x++) {
+                    int i = random.nextInt(hourCount) + hourBegin;
+                    while (hourList.contains(i)) {
+                        i = random.nextInt(hourCount) + hourBegin;
                     }
-                    Lists.sort(hourList, new OrderingHour());
-                    for (Integer hour : hourList) {
-                        DateTime playDateTime1 = LocalTime.parse(String.format("%s:0", hour), timeFormatter)
-                                .plusMinutes(
-                                        random.nextInt(minuteMax) + 1
-                                )
-                                .toDateTimeToday();
-                        DateTime playDateTime2 = LocalTime.parse(String.format("%s:30", hour), timeFormatter)
-                                .plusMinutes(
-                                        random.nextInt(minuteMax) + 1
-                                )
-                                .toDateTimeToday();
-                        DateTime pauseDateTime1 = playDateTime1.plusSeconds(
-                                random.nextInt(playSecondsMax - playSecondsMin + 1) + playSecondsMin
-                        );
-                        DateTime pauseDateTime2 = playDateTime2.plusSeconds(
-                                random.nextInt(playSecondsMax - playSecondsMin + 1) + playSecondsMin
-                        );
-
-                        // 记录规则
-                        stringBuilder
-                                .append(
-                                        playDateTime1.toString("HH:mm:ss")
-                                )
-                                .append("播,")
-                                .append(
-                                        pauseDateTime1.toString("HH:mm:ss")
-                                )
-                                .append(";")
-                                .append(
-                                        playDateTime2.toString("HH:mm:ss")
-                                )
-                                .append("播,")
-                                .append(
-                                        pauseDateTime2.toString("HH:mm:ss")
-                                )
-                                .append("停\n");
-
-                        // 安排任务
-                        if (pauseDateTime1.isAfter(DateTime.now())) {
-                            // 播放
-                            timer.schedule(
-                                    new TimerTask() {
-                                        @Override
-                                        public void run() {
-                                            handler.sendEmptyMessage(1);
-                                        }
-                                    },
-                                    playDateTime1.toDate()
-                            );
-
-                            // 暂停
-                            timer.schedule(
-                                    new TimerTask() {
-                                        @Override
-                                        public void run() {
-                                            handler.sendEmptyMessage(2);
-                                        }
-                                    },
-                                    pauseDateTime1.toDate()
-                            );
-                        }
-                        if (pauseDateTime2.isAfter(DateTime.now())) {
-                            // 播放
-                            timer.schedule(
-                                    new TimerTask() {
-                                        @Override
-                                        public void run() {
-                                            handler.sendEmptyMessage(1);
-                                        }
-                                    },
-                                    playDateTime2.toDate()
-                            );
-
-                            // 暂停
-                            timer.schedule(
-                                    new TimerTask() {
-                                        @Override
-                                        public void run() {
-                                            handler.sendEmptyMessage(2);
-                                        }
-                                    },
-                                    pauseDateTime2.toDate()
-                            );
-                        }
-                    }
-                } else {
-                    stringBuilder.append("规则无效:")
-                            .append(ruleText);
+                    hourList.add(i);
                 }
-            } catch (Exception e) {
-                Log.w(T, e);
-                stringBuilder.append("规则有误:")
+                Lists.sort(hourList, new OrderingHour());
+                for (Integer hour : hourList) {
+                    DateTime playDateTime1 = LocalTime.parse(String.format("%s:0", hour), timeFormatter)
+                            .plusMinutes(
+                                    random.nextInt(minuteMax + 1)
+                            )
+                            .toDateTimeToday();
+                    DateTime playDateTime2 = LocalTime.parse(String.format("%s:30", hour), timeFormatter)
+                            .plusMinutes(
+                                    random.nextInt(minuteMax + 1)
+                            )
+                            .toDateTimeToday();
+                    DateTime pauseDateTime1 = playDateTime1.plusSeconds(
+                            random.nextInt(playSecondsMax - playSecondsMin + 1) + playSecondsMin
+                    );
+                    DateTime pauseDateTime2 = playDateTime2.plusSeconds(
+                            random.nextInt(playSecondsMax - playSecondsMin + 1) + playSecondsMin
+                    );
+
+                    // 记录规则
+                    stringBuilder
+                            .append(
+                                    playDateTime1.toString("HH:mm:ss")
+                            )
+                            .append("播,")
+                            .append(
+                                    pauseDateTime1.toString("HH:mm:ss")
+                            )
+                            .append(";")
+                            .append(
+                                    playDateTime2.toString("HH:mm:ss")
+                            )
+                            .append("播,")
+                            .append(
+                                    pauseDateTime2.toString("HH:mm:ss")
+                            )
+                            .append("停\n");
+
+                    // 安排任务
+                    if (pauseDateTime1.isAfter(DateTime.now())) {
+                        // 播放
+                        timer.schedule(
+                                new TimerTask() {
+                                    @Override
+                                    public void run() {
+                                        handler.sendEmptyMessage(1);
+                                    }
+                                },
+                                playDateTime1.toDate()
+                        );
+
+                        // 暂停
+                        timer.schedule(
+                                new TimerTask() {
+                                    @Override
+                                    public void run() {
+                                        handler.sendEmptyMessage(2);
+                                    }
+                                },
+                                pauseDateTime1.toDate()
+                        );
+                    }
+                    if (pauseDateTime2.isAfter(DateTime.now())) {
+                        // 播放
+                        timer.schedule(
+                                new TimerTask() {
+                                    @Override
+                                    public void run() {
+                                        handler.sendEmptyMessage(1);
+                                    }
+                                },
+                                playDateTime2.toDate()
+                        );
+
+                        // 暂停
+                        timer.schedule(
+                                new TimerTask() {
+                                    @Override
+                                    public void run() {
+                                        handler.sendEmptyMessage(2);
+                                    }
+                                },
+                                pauseDateTime2.toDate()
+                        );
+                    }
+                }
+            } else {
+                stringBuilder.append("规则无效:")
                         .append(ruleText);
             }
-        } else {
-            stringBuilder.append("规则没有设置, 暂不安排任务");
+        } catch (Exception e) {
+            Log.w(T, e);
+            stringBuilder.append("规则有误:")
+                    .append(ruleText);
         }
 
         b.textRule.setText(stringBuilder);
@@ -411,31 +407,26 @@ public class ActivityMain extends AppCompatActivity {
                         text = txt;
                     }
 
-                    if (TextUtils.isEmpty(text) && !TextUtils.isEmpty(ruleText)) {
-                        Log.d(T, "DNS设置关闭");
-                        ruleText = "";
-                        handler.sendEmptyMessage(2);
+                    if (text.equals(ruleText)) {
                         return;
                     }
 
-                    if (!ruleText.equals(text)) {
-                        Log.d(T, "DNS设置变化");
-                        ruleText = text;
+                    Log.d(T, "DNS设置变化");
+                    ruleText = text;
 
-                        runOnUiThread(() -> {
-                            b.textDns.setText(
-                                    String.format(
-                                            "%s %s",
-                                            DateTime.now().toString("YYYY-MM-dd_HH:mm:ss"),
-                                            ruleText
-                                    )
-                            );
+                    runOnUiThread(() -> {
+                        b.textDns.setText(
+                                String.format(
+                                        "%s %s",
+                                        DateTime.now().toString("YYYY-MM-dd_HH:mm:ss"),
+                                        ruleText
+                                )
+                        );
 
-                            if (timer != null) {
-                                reset();
-                            }
-                        });
-                    }
+                        if (timer != null) {
+                            reset();
+                        }
+                    });
                 }
         );
     }
