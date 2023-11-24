@@ -1,19 +1,20 @@
 package red.lilu.app;
 
-import android.animation.ValueAnimator;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.os.HandlerCompat;
 import androidx.media3.common.MediaItem;
@@ -57,7 +58,6 @@ public class ActivityMain extends AppCompatActivity {
     private Timer timer;
     private String ruleText = "";
     private Intent dataIntent;
-    private ValueAnimator valueAnimator;
     private int screenBright;
 
     @Override
@@ -121,6 +121,11 @@ public class ActivityMain extends AppCompatActivity {
                         reset();
 
                         return true;
+                    } else if (msg.what == 5) {
+                        updateScreenProtectTextPlace();
+                        handler.sendEmptyMessageDelayed(5, 120000); // 2分钟后再次执行
+
+                        return true;
                     }
 
                     return false;
@@ -150,18 +155,10 @@ public class ActivityMain extends AppCompatActivity {
             b.buttonScreenProtect.setEnabled(true);
             reset();
         });
-        valueAnimator = ValueAnimator.ofInt(0, 1000);
-        valueAnimator.setDuration(60000);
-        valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        valueAnimator.setRepeatMode(ValueAnimator.REVERSE);
-        valueAnimator.addUpdateListener(animation -> {
-            int v = (int) animation.getAnimatedValue();
-            b.textScreenProtect.setPadding(0, v, 0, 0);
-        });
         b.buttonScreenProtect.setOnClickListener(v -> {
             startScreenProtect();
         });
-        b.textScreenProtect.setOnClickListener(v -> {
+        b.layoutScreenProtect.setOnClickListener(v -> {
             stopScreenProtect();
         });
 
@@ -204,6 +201,21 @@ public class ActivityMain extends AppCompatActivity {
         player.stop();
         player.release();
         player = null;
+    }
+
+    /**
+     * AndroidManifest.xml需要设置 android:configChanges="orientation|screenSize"
+     *
+     * @param newConfig The new device configuration.
+     */
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.d(T, "onConfigurationChanged");
+
+        if (b.layoutScreenProtect.getVisibility() == View.VISIBLE) {
+            updateScreenProtectTextPlace();
+        }
     }
 
     private void hideSystemUI() {
@@ -487,6 +499,23 @@ public class ActivityMain extends AppCompatActivity {
     }
 
     /**
+     * 更新屏幕保护文字位置
+     */
+    private void updateScreenProtectTextPlace() {
+        MyApplication.SizeInfo sizeInfo = application.getSizeInfo(this);
+
+        int leftMax = sizeInfo.screenWidthPixels - b.textScreenProtect.getMeasuredWidth();
+        int topMax = sizeInfo.screenHeightPixels - b.textScreenProtect.getMeasuredHeight()
+                - sizeInfo.statusBarHeightPixels - sizeInfo.navigationBarHeightPixels;
+
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) b.textScreenProtect.getLayoutParams();
+        layoutParams.setMargins(
+                random.nextInt(leftMax), random.nextInt(topMax), 0, 0
+        );
+        b.textScreenProtect.setLayoutParams(layoutParams);
+    }
+
+    /**
      * 设置屏幕亮度
      *
      * @param v 0-255
@@ -503,10 +532,10 @@ public class ActivityMain extends AppCompatActivity {
      */
     private void startScreenProtect() {
         hideSystemUI();
-        b.textScreenProtect.setVisibility(View.VISIBLE);
-        valueAnimator.start();
+        b.layoutScreenProtect.setVisibility(View.VISIBLE);
         screenBright = getScreenBright();
         setScreenBright(10);
+        handler.sendEmptyMessage(5);
     }
 
     /**
@@ -514,9 +543,9 @@ public class ActivityMain extends AppCompatActivity {
      */
     private void stopScreenProtect() {
         showSystemUI();
-        valueAnimator.cancel();
-        b.textScreenProtect.setVisibility(View.GONE);
+        b.layoutScreenProtect.setVisibility(View.GONE);
         setScreenBright(screenBright);
+        handler.removeMessages(5);
     }
 
 }

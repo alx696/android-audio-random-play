@@ -1,8 +1,10 @@
 package red.lilu.app;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -99,6 +101,51 @@ public class MyApplication extends Application {
 
     public RxDataStore<Pref> getDataStore() {
         return dataStore;
+    }
+
+    public static class SizeInfo {
+        public int screenWidthPixels, screenHeightPixels;
+        public int statusBarHeightPixels;
+        public int navigationBarHeightPixels;
+
+        public SizeInfo(int screenWidthPixels, int screenHeightPixels,
+                        int statusBarHeightPixels, int navigationBarHeightPixels) {
+            this.screenWidthPixels = screenWidthPixels;
+            this.screenHeightPixels = screenHeightPixels;
+            this.statusBarHeightPixels = statusBarHeightPixels;
+            this.navigationBarHeightPixels = navigationBarHeightPixels;
+        }
+    }
+
+    public SizeInfo getSizeInfo(Activity activity) {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        activity.getWindowManager().getDefaultDisplay().getRealMetrics(displayMetrics);
+//        Log.d(T, "宽" + displayMetrics.widthPixels);
+//        Log.d(T, "高" + displayMetrics.heightPixels);
+
+//        Log.d(T, "宽(DP)" + getResources().getConfiguration().screenWidthDp);
+//        Log.d(T, "高(DP)" + getResources().getConfiguration().screenHeightDp);
+
+        // status bar height
+        int statusBarHeight = 0;
+        int statusBarResourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (statusBarResourceId > 0) {
+            statusBarHeight = getResources().getDimensionPixelSize(statusBarResourceId);
+        }
+//        Log.d(T, "状态栏" + statusBarHeight);
+
+        // navigation bar height
+        int navigationBarHeight = 0;
+        int navigationBarResourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+        if (navigationBarResourceId > 0) {
+            navigationBarHeight = getResources().getDimensionPixelSize(navigationBarResourceId);
+        }
+//        Log.d(T, "导航栏" + navigationBarHeight);
+
+        return new SizeInfo(
+                displayMetrics.widthPixels, displayMetrics.heightPixels,
+                statusBarHeight, navigationBarHeight
+        );
     }
 
 }

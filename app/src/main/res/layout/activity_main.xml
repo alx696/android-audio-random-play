@@ -111,18 +111,24 @@
     </ScrollView>
 
     <!-- 任务进行中的浮动提示 -->
-    <TextView
-        android:id="@+id/text_screen_protect"
-        style="@style/TextAppearance.AppCompat.Title"
+    <FrameLayout
+        android:id="@+id/layout_screen_protect"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@color/black"
-        android:gravity="center_horizontal"
-        android:text="不要锁屏或切走"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/text_screen_protect"
+            style="@style/TextAppearance.AppCompat.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="不要锁屏或切走" />
+
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
