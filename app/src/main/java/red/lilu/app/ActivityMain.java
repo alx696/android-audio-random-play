@@ -114,7 +114,7 @@ public class ActivityMain extends AppCompatActivity {
                         return true;
                     } else if (msg.what == 3) {
                         updateDnsConf();
-                        handler.sendEmptyMessageDelayed(3, 120000); // 2分钟后再次执行
+                        handler.sendEmptyMessageDelayed(3, 60000); // 1分钟后再次执行
 
                         return true;
                     } else if (msg.what == 4) {
@@ -271,6 +271,8 @@ public class ActivityMain extends AppCompatActivity {
         timer = new Timer();
         StringBuilder stringBuilder = new StringBuilder();
 
+        player.pause();
+
         // 第二天重置任务
         DateTime tomorrowDateTime = LocalTime.parse(
                         "00:00:01", DateTimeFormat.forPattern("HH:mm:ss")
@@ -419,7 +421,7 @@ public class ActivityMain extends AppCompatActivity {
                         text = txt;
                     }
 
-                    if (text.equals(ruleText)) {
+                    if (text.isEmpty() || text.equals(ruleText)) {
                         return;
                     }
 
