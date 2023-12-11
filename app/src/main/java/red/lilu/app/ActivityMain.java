@@ -21,7 +21,9 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.exoplayer.ExoPlayer;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 import org.apache.commons.io.FileUtils;
@@ -35,11 +37,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import java9.util.Lists;
 import kotlinx.coroutines.ExperimentalCoroutinesApi;
 import red.lilu.app.databinding.ActivityMainBinding;
 import red.lilu.app.tool.Dns;
@@ -51,12 +55,12 @@ public class ActivityMain extends AppCompatActivity {
     public static final String ACTION_AUDIO_UPDATE = "音频更新";
     private final DateTimeFormatter timeFormatter = DateTimeFormat.forPattern("H:m");
     private final Random random = new Random();
+    private final LinkedHashSet<String> ruleTextSet = new LinkedHashSet<>();
     private ActivityMainBinding b;
     private MyApplication application;
     private Handler handler;
     private ExoPlayer player;
     private Timer timer;
-    private String ruleText = "";
     private Intent dataIntent;
     private int screenBright;
 
@@ -96,12 +100,6 @@ public class ActivityMain extends AppCompatActivity {
                 msg -> {
                     if (msg.what == 1) {
                         Log.i(T, "收到播放指令");
-
-                        if (ruleText.startsWith("0")) {
-                            Log.i(T, "DNS设置关闭, 暂不播放");
-                            return true;
-                        }
-
                         fileLog("播放");
                         player.play();
 
@@ -118,7 +116,7 @@ public class ActivityMain extends AppCompatActivity {
 
                         return true;
                     } else if (msg.what == 4) {
-                        reset();
+                        reset(ruleTextSet);
 
                         return true;
                     } else if (msg.what == 5) {
@@ -153,7 +151,7 @@ public class ActivityMain extends AppCompatActivity {
             fileLog("手动开始");
             b.buttonBegin.setText("停止");
             b.buttonScreenProtect.setEnabled(true);
-            reset();
+            reset(ruleTextSet);
         });
         b.buttonScreenProtect.setOnClickListener(v -> {
             startScreenProtect();
@@ -262,13 +260,14 @@ public class ActivityMain extends AppCompatActivity {
         }
     }
 
-    private void reset() {
+    private void reset(HashSet<String> ruleSet) {
         fileLog("重置");
 
         if (timer != null) {
             timer.cancel();
         }
         timer = new Timer();
+
         StringBuilder stringBuilder = new StringBuilder();
 
         player.pause();
@@ -292,24 +291,30 @@ public class ActivityMain extends AppCompatActivity {
 
         // 按照规则生成随机任务
         try {
-            String[] textArray = ruleText.split(",");
-            if (textArray.length >= 6) {
+            for (String ruleText : ruleSet) {
+                String[] textArray = ruleText.split(",");
+
+                if (textArray.length < 6) {
+                    stringBuilder.append("规则无效:")
+                            .append(ruleText);
+                    continue;
+                }
+
+                int sw = Integer.parseInt(textArray[0]);
                 int hourBegin = Integer.parseInt(textArray[1]);
                 int hourEnd = Integer.parseInt(textArray[2]);
-                int hourCount = hourEnd - hourBegin + 1;
                 int minuteMax = Integer.parseInt(textArray[3]);
                 int playSecondsMin = Integer.parseInt(textArray[4]);
                 int playSecondsMax = Integer.parseInt(textArray[5]);
-                ArrayList<Integer> hourList = new ArrayList<>();
-                for (int x = 0; x < hourCount; x++) {
-                    int i = random.nextInt(hourCount) + hourBegin;
-                    while (hourList.contains(i)) {
-                        i = random.nextInt(hourCount) + hourBegin;
-                    }
-                    hourList.add(i);
+
+                // 开关设为关的跳过
+                if (sw == 0) {
+                    stringBuilder.append("规则关闭:")
+                            .append(ruleText);
+                    continue;
                 }
-                Lists.sort(hourList, new OrderingHour());
-                for (Integer hour : hourList) {
+
+                for (int hour = hourBegin; hour <= hourEnd; hour++) {
                     DateTime playDateTime1 = LocalTime.parse(String.format("%s:0", hour), timeFormatter)
                             .plusMinutes(
                                     random.nextInt(minuteMax + 1)
@@ -336,7 +341,7 @@ public class ActivityMain extends AppCompatActivity {
                             .append(
                                     pauseDateTime1.toString("HH:mm:ss")
                             )
-                            .append(";")
+                            .append("停 ; ")
                             .append(
                                     playDateTime2.toString("HH:mm:ss")
                             )
@@ -394,17 +399,31 @@ public class ActivityMain extends AppCompatActivity {
                         );
                     }
                 }
-            } else {
-                stringBuilder.append("规则无效:")
-                        .append(ruleText);
             }
         } catch (Exception e) {
             Log.w(T, e);
-            stringBuilder.append("规则有误:")
-                    .append(ruleText);
+            stringBuilder.append("规则异常:")
+                    .append(e.getMessage());
         }
 
         b.textRule.setText(stringBuilder);
+    }
+
+    private static class RuleComparator implements Comparator<String> {
+        @Override
+        public int compare(String o1, String o2) {
+            try {
+                String[] a1 = o1.split(",");
+                String[] a2 = o2.split(",");
+
+                int hourBegin1 = Integer.parseInt(a1[1]);
+                int hourBegin2 = Integer.parseInt(a2[1]);
+                return hourBegin1 - hourBegin2;
+            } catch (Exception e) {
+                Log.w(T, e);
+            }
+            return 0;
+        }
     }
 
     /**
@@ -415,30 +434,30 @@ public class ActivityMain extends AppCompatActivity {
                 application.getExecutorService(),
                 "rule.auto-play.app.lilu.red",
                 error -> Log.w(T, error),
-                txtList -> {
-                    String text = "";
-                    for (String txt : txtList) {
-                        text = txt;
-                    }
+                txtSet -> {
+                    Sets.SetView<String> intersectionSet = Sets.intersection(ruleTextSet, txtSet);
 
-                    if (text.isEmpty() || text.equals(ruleText)) {
+                    if (ruleTextSet.size() > 0 && intersectionSet.size() == ruleTextSet.size()) {
                         return;
                     }
 
                     Log.d(T, "DNS设置变化");
-                    ruleText = text;
+                    ArrayList<String> list = Lists.newArrayList(txtSet);
+                    list.sort(new RuleComparator());
+                    ruleTextSet.clear();
+                    ruleTextSet.addAll(list);
 
                     runOnUiThread(() -> {
                         b.textDns.setText(
                                 String.format(
                                         "%s %s",
                                         DateTime.now().toString("YYYY-MM-dd_HH:mm:ss"),
-                                        ruleText
+                                        String.join(" ; ", list)
                                 )
                         );
 
                         if (timer != null) {
-                            reset();
+                            reset(ruleTextSet);
                         }
                     });
                 }

@@ -37,9 +37,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:padding="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layout_dns">
+        app:layout_constraintTop_toBottomOf="@id/layout_dns"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <TextView
             style="@style/TextAppearance.AppCompat.Title"

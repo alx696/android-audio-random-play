@@ -5,6 +5,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -46,10 +47,10 @@ public class Dns {
     public void txt(ExecutorService executorService,
                     String domain,
                     java9.util.function.Consumer<String> onError,
-                    java9.util.function.Consumer<ArrayList<String>> onDone) {
+                    java9.util.function.Consumer<HashSet<String>> onDone) {
         CompletableFuture.runAsync(() -> {
             try {
-                ArrayList<String> list = new ArrayList<>();
+                HashSet<String> list = new HashSet<>();
 
                 okhttp3.Request request = new okhttp3.Request.Builder()
                         .url(String.format("%s?type=16&name=%s", DOH, domain))
