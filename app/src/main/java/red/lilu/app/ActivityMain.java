@@ -296,7 +296,8 @@ public class ActivityMain extends AppCompatActivity {
 
                 if (textArray.length < 6) {
                     stringBuilder.append("规则无效:")
-                            .append(ruleText);
+                            .append(ruleText)
+                            .append("\n");
                     continue;
                 }
 
@@ -310,7 +311,8 @@ public class ActivityMain extends AppCompatActivity {
                 // 开关设为关的跳过
                 if (sw == 0) {
                     stringBuilder.append("规则关闭:")
-                            .append(ruleText);
+                            .append(ruleText)
+                            .append("\n");
                     continue;
                 }
 
