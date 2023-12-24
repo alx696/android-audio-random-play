@@ -1,6 +1,6 @@
 plugins {
     id 'com.android.application'
-    id 'com.google.protobuf' version '0.9.1'
+    id 'com.google.protobuf' version '0.9.4'
 }
 
 android {
@@ -36,13 +36,13 @@ android {
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.10.0'
+    implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
-    implementation 'io.grpc:grpc-protobuf-lite:1.57.2'
+    implementation 'io.grpc:grpc-protobuf-lite:1.60.0'
     compileOnly 'org.apache.tomcat:annotations-api:6.0.53' // necessary for Java 9+
     implementation "androidx.datastore:datastore:1.0.0"
     implementation "androidx.datastore:datastore-rxjava3:1.0.0"
@@ -57,16 +57,16 @@ dependencies {
     // 使用老版2.5兼容老旧系统, FileUtils.deleteDirectory() 和 FileUtils.copyFileToDirectory() 都能工作 !
     implementation 'commons-io:commons-io:2.5'
     // 老版系统中提供 java9.util.concurrent 支持
-    implementation 'net.sourceforge.streamsupport:android-retrofuture:1.7.3'
+    implementation 'net.sourceforge.streamsupport:android-retrofuture:1.7.4'
 }
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:3.21.7"
+        artifact = "com.google.protobuf:protoc:3.23.4"
     }
     plugins {
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.57.2'
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.60.0'
         }
     }
     generateProtoTasks {
