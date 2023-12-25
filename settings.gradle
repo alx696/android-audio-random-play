@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "android-auto-play"
+rootProject.name = "随播"
 include ':app'
